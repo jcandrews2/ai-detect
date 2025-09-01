@@ -1,31 +1,30 @@
 from models.random_forest import RandomForest
-from data.data import DataLoader
+from data.data_loader import DataLoader
 
 def main():
-    # Prepare data
-    data_loader = DataLoader("src/data/balanced_ai_human_prompts.csv")
+    # Load and prepare the data
+    print("===== Preparing data =====\n")
+    data_loader = DataLoader("~/Downloads/AI_Human.csv")
     data_loader.prepare()
+    X_train, y_train = data_loader.get_train_data()
+    X_test, y_test = data_loader.get_test_data()
 
-    # Create and train model
-    model = RandomForest(data_loader)
-    model.train()
-    model.evaluate()
+    # Create and train the model
+    print("===== Training model =====\n")
+    model = RandomForest()
+    model.train(X_train, y_train)
+    model.evaluate(X_test, y_test)
+    model.save("saved", "rf_model.pkl")
 
-    # Try some predictions
-    print("\nTesting predictions:")
-    ai_like = "Learning new skills can feel overwhelming at first, but persistence often leads to surprising progress. Even when mistakes happen, they create opportunities to understand concepts more deeply. For example, many programmers struggle with the basics of machine learning, yet small steps like experimenting with vectorizers and classifiers build confidence. With consistent practice, what once felt confusing begins to make sense. Ultimately, growth comes not from avoiding challenges but from working through them patiently."
-    human_like = "Unfortunately, legalizing Cocaine in the U.S. is a much larger undertaking than you might think. Although cocaine has similar levels of addictiveness to alcohol, with a reported 17% of all users becoming dependent on cocaine and 15% of all users becoming dependent on alcohol, cocaine is seen by many Americans as a highly addictive and dangerous substance to be circulating in the public. "
+    # Test loading and using the saved model
+    print("\n===== Testing saved model =====")
+    loaded_model = RandomForest.load("saved/rf_model.pkl")
     
-    pred_ai, prob_ai = model.predict(ai_like)
-    pred_human, prob_human = model.predict(human_like)
-    
-    print(f"\nAI-like text:")
-    print(f"Prediction (1=AI, 0=Human): {pred_ai[0]}")
-    print(f"Confidence: {prob_ai[0].max():.2%}")
-    
-    print(f"\nHuman-like text:")
-    print(f"Prediction (1=AI, 0=Human): {pred_human[0]}")
-    print(f"Confidence: {prob_human[0].max():.2%}")
+    # Verify it works with some example predictions
+    test_text = "This is a test sentence to verify the loaded model works."
+    pred, prob = loaded_model.predict(test_text)
+    print(f"\nTest prediction (1=AI, 0=Human): {pred[0]}")
+    print(f"Confidence: {prob[0].max():.2%}")
 
 if __name__ == "__main__":
     main()

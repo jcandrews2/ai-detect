@@ -1,45 +1,66 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from .text_classifier import TextClassifier
 
-class RandomForest:
-    """A random forest classifier for text classification."""
+class RandomForest(TextClassifier):
+    """Random forest classifier for AI text detection."""
     
-    def __init__(self, data_loader):
-        """Initialize with a DataLoader instance."""
-        self.model = RandomForestClassifier(n_estimators=100, random_state=0)
-        self.data_loader = data_loader
+    def __init__(self, vectorizer=None):
+        """Initialize the random forest classifier."""
 
-    def train(self):
-        """Train the model using data from the DataLoader."""
-        X_train, y_train = self.data_loader.get_train_data()
-        print("Training the model...")
-        self.model.fit(X_train, y_train)
-        return self
+        # Initialize the parent class with the vectorizer
+        super().__init__(vectorizer)
+
+        # Initialize the classifier
+        self._classifier = RandomForestClassifier(
+            n_estimators=100,
+            random_state=0,
+            verbose=2
+        )
+
+    def train(self, X, y):
+        """Train the model on provided data."""
+        
+        # Fit vectorizer if not already fitted
+        if not hasattr(self._vectorizer, 'vocabulary_'):
+            self._vectorizer.fit(X)
+        
+        # Transform text and train
+        X_vectors = self._vectorizer.transform(X)
+
+        # Train the classifier
+        self._classifier.fit(X_vectors, y)
 
     def predict(self, text):
-        """Predict the class of a text snippet."""
-        X = self.data_loader.vectorize_text(text)
-        return self.model.predict(X), self.model.predict_proba(X)
+        """Predict whether text is AI-generated."""
 
-    def evaluate(self):
-        """Evaluate the model with precision, recall, f1, and accuracy."""
-        X_test, y_test = self.data_loader.get_test_data()
-        predictions = self.model.predict(X_test)
+        # Vectorize the text
+        X_vector = self._vectorize_text(text)
 
-        precision = precision_score(y_test, predictions)
-        recall = recall_score(y_test, predictions)
-        f1 = f1_score(y_test, predictions)
-        accuracy = accuracy_score(y_test, predictions)
+        # Predict the class and probability
+        return (
+            self._classifier.predict(X_vector),
+            self._classifier.predict_proba(X_vector)
+        )
 
-        print(f"\nEvaluation Metrics:")
-        print(f"Precision: {precision:.4f}")
-        print(f"Recall: {recall:.4f}")
-        print(f"F1 Score: {f1:.4f}")
-        print(f"Accuracy: {accuracy:.4f}\n")
-        
-        return {
-            "precision": precision,
-            "recall": recall,
-            "f1": f1,
-            "accuracy": accuracy
+    def evaluate(self, X_test, y_test):
+        """Evaluate model performance."""
+
+        # Vectorize the test data
+        X_vectors = self._vectorize_text(X_test)
+
+        # Predict the class
+        predictions = self._classifier.predict(X_vectors)
+
+        # Calculate the metrics
+        metrics = {
+            'precision': precision_score(y_test, predictions),
+            'recall': recall_score(y_test, predictions),
+            'f1': f1_score(y_test, predictions),
+            'accuracy': accuracy_score(y_test, predictions)
         }
+
+        print("\nEvaluation Metrics:")
+        for metric, value in metrics.items():
+            print(f"{metric.title()}: {value:.4f}")
+        print()
