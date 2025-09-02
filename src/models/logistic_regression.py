@@ -1,9 +1,9 @@
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-from src.models.text_classifier import TextClassifier
+from .text_classifier import TextClassifier
 from tqdm import tqdm
 
-class RandomForest(TextClassifier):
+class LogisticRegression(TextClassifier):
     """Random forest classifier for AI text detection."""
     
     def __init__(self, vectorizer=None):
@@ -13,8 +13,8 @@ class RandomForest(TextClassifier):
         super().__init__(vectorizer)
 
         # Initialize the classifier
-        self._classifier = RandomForestClassifier(
-            n_estimators=100,
+        self._classifier = LogisticRegression(
+            max_iter=100,
             random_state=0,
             verbose=2
         )

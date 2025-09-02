@@ -1,12 +1,14 @@
 from fastapi import FastAPI, APIRouter
 from pydantic import BaseModel
+from src.models.random_forest import RandomForest
+from pathlib import Path
+import os
 
 app = FastAPI()
 
 # Create a router with the prefix
 api_router = APIRouter(prefix="/api/v1")
 
-# uvicorn api:app --reload
 class TextItem(BaseModel): 
     text: str
 
@@ -54,9 +56,24 @@ async def info():
 async def health():
     return {}
 
-@api_router.get("/classify")
-async def classify():
-    return {}
+@api_router.post("/classify")
+async def classify(TextItem: TextItem):
+
+    # Get absolute path to the model file
+    model_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "src", "models", "saved")
+
+    # Load the model
+    loaded_model = RandomForest.load(model_folder, "rf_model.pkl")
+
+    # Predict the class and probability
+    pred, prob = loaded_model.predict(TextItem.text)
+
+    prediction = "AI" if pred[0] == 1 else "Human"
+    confidence = f"{prob[0].max() * 100:.1f}%"
+    return {
+        "prediction": prediction,
+        "confidence": confidence
+    }
 
 
 app.include_router(api_router)
