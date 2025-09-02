@@ -1,2 +1,13 @@
-pycache/
+# Ignore virtual environments
 venv/
+.env/
+*.env
+
+# Ignore model files and other large data
+*.pkl
+*.joblib
+
+# Ignore system files
+__pycache__/
+*.pyc
+.DS_Store
