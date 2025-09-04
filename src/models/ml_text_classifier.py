@@ -2,12 +2,12 @@ from abc import ABC, abstractmethod
 import pickle
 import os
 
-class TextClassifier(ABC):
-    """Base class for text classification models."""
+class MLTextClassifier(ABC):
+    """Base class for machine learning text classification models."""
     
-    def __init__(self, vectorizer=None):
-        """Initialize with optional vectorizer."""
-        self._vectorizer = vectorizer
+    def __init__(self, encoder):
+        """Initialize with encoder."""
+        self._encoder = encoder
     
     @abstractmethod
     def train(self, X, y):
@@ -16,16 +16,30 @@ class TextClassifier(ABC):
     
     @abstractmethod
     def predict(self, text):
-        """Make predictions on text."""
+        """Make predictions on the text."""
         pass
     
     @abstractmethod
     def evaluate(self, X_test, y_test):
         """Evaluate model performance."""
         pass
+
+    def _encode(self, text, fit=False):
+        """Encode the text."""
+
+        # Always work with a list
+        if isinstance(text, str):
+            text = [text]
+
+        text_iter = tqdm(text, desc=desc, leave=True)
+
+        if fit:
+            return self._encoder.fit_transform(text_iter)
+        else:
+            return self._encoder.transform(text_iter)
     
     def save(self, folder: str, filename: str):
-        """Save model to file."""
+        """Save the model to a file."""
 
         # Create the folder if it doesn't exist
         os.makedirs(folder, exist_ok=True)
@@ -39,7 +53,7 @@ class TextClassifier(ABC):
     
     @classmethod
     def load(cls, folder: str, filename: str):
-        """Load model from file."""
+        """Load the model from a file."""
 
         # Create the folder if it doesn't exist
         os.makedirs(folder, exist_ok=True)

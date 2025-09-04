@@ -1,16 +1,19 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-from src.models.text_classifier import TextClassifier
+from src.models.ml_text_classifier import MLTextClassifier
 from tqdm import tqdm
 
-class RandomForest(TextClassifier):
+class RandomForestModel(MLTextClassifier):
     """Random forest classifier for AI text detection."""
     
-    def __init__(self, vectorizer=None):
+    def __init__(self, encoder, should_fit_encoder):
         """Initialize the random forest classifier."""
 
-        # Initialize the parent class with the vectorizer
-        super().__init__(vectorizer)
+        # Whether to fit the encoder
+        self._should_fit_encoder = should_fit_encoder
+
+        # Initialize the parent class with the encoder
+        super().__init__(encoder)
 
         # Initialize the classifier
         self._classifier = RandomForestClassifier(
@@ -19,38 +22,25 @@ class RandomForest(TextClassifier):
             verbose=2
         )
 
-    def _vectorize_text(self, text):
-        """Transform text using the vectorizer."""
-
-        # If the text is a string, convert it to a list
-        if isinstance(text, str):
-            text = [text]
-
-        text_iter = tqdm(text, desc="Vectorizing test data", leave=True)
-
-        # Vectorize the text
-        return self._vectorizer.transform(text_iter)
-
-    def train(self, X, y):
+    def train(self, X_train, y_train):
         """Train the model on provided data."""
         
-        X_iter = tqdm(X, desc="Vectorizing training data", leave=True)
+        X_iter = tqdm(X_train, desc="Vectorizing training data", leave=True)
 
-        # Fit vectorizer if not already fitted
-        if not hasattr(self._vectorizer, 'vocabulary_'):
-            self._vectorizer.fit(X_iter)
+        # Fit the encoder if needed and transform the data
+        if self._should_fit_encoder:
+            X_vectors = self._encoder.fit_transform(X_iter)
+        else: 
+            X_vectors = self._encoder.transform(X_iter)
         
-        # Transform text and train
-        X_vectors = self._vectorizer.transform(X_iter)
-
         # Train the classifier
-        self._classifier.fit(X_vectors, y)
+        self._classifier.fit(X_vectors, y_train)
 
     def predict(self, text):
         """Predict whether text is AI-generated."""
 
-        # Vectorize the text
-        X_vector = self._vectorize_text(text)
+        # Transform the text
+        X_vector = self._encoder.transform([text] if isinstance(text, str) else text)
 
         # Predict the class and probability
         return (
@@ -61,8 +51,7 @@ class RandomForest(TextClassifier):
     def evaluate(self, X_test, y_test):
         """Evaluate model performance."""
 
-        # Vectorize the test data
-        X_vectors = self._vectorize_text(X_test)
+        X_vectors = self._encoder.transform(X_test)
 
         # Predict the class
         predictions = self._classifier.predict(X_vectors)
