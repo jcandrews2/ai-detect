@@ -13,12 +13,9 @@ from scipy.sparse import issparse
 class NeuralNetworkModel(NNTextClassifier):
     """Neural network classifier for AI text detection."""
 
-    def __init__(self, encoder, should_fit_encoder):
+    def __init__(self, encoder):
         """Initialize with encoder and parent class."""
         
-        # Whether to fit the encoder
-        self._should_fit_encoder = should_fit_encoder
-
         # Get the device
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using {self._device} device") 
@@ -47,11 +44,8 @@ class NeuralNetworkModel(NNTextClassifier):
 
         X_iter = tqdm(X, desc="Encoding training data", leave=True)
 
-        # Fit the encoder if needed and transform the data
-        if self._should_fit_encoder:
-            X_vectors = self._encoder.fit_transform(X_iter)
-        else: 
-            X_vectors = self._encoder.transform(X_iter)
+        # Transform the data
+        X_vectors = self._encoder.transform(X_iter)
 
         # Convert to dense array if sparse
         if issparse(X_vectors):

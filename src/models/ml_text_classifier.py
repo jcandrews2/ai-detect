@@ -10,7 +10,7 @@ class MLTextClassifier(ABC):
         self._encoder = encoder
     
     @abstractmethod
-    def train(self, X, y):
+    def train_model(self, X, y):
         """Train the model."""
         pass
     
@@ -24,19 +24,6 @@ class MLTextClassifier(ABC):
         """Evaluate model performance."""
         pass
 
-    def _encode(self, text, fit=False):
-        """Encode the text."""
-
-        # Always work with a list
-        if isinstance(text, str):
-            text = [text]
-
-        text_iter = tqdm(text, desc=desc, leave=True)
-
-        if fit:
-            return self._encoder.fit_transform(text_iter)
-        else:
-            return self._encoder.transform(text_iter)
     
     def save(self, folder: str, filename: str):
         """Save the model to a file."""

@@ -6,11 +6,8 @@ from tqdm import tqdm
 class RandomForestModel(MLTextClassifier):
     """Random forest classifier for AI text detection."""
     
-    def __init__(self, encoder, should_fit_encoder):
+    def __init__(self, encoder):
         """Initialize the random forest classifier."""
-
-        # Whether to fit the encoder
-        self._should_fit_encoder = should_fit_encoder
 
         # Initialize the parent class with the encoder
         super().__init__(encoder)
@@ -22,16 +19,13 @@ class RandomForestModel(MLTextClassifier):
             verbose=2
         )
 
-    def train(self, X_train, y_train):
+    def train_model(self, X_train, y_train):
         """Train the model on provided data."""
         
         X_iter = tqdm(X_train, desc="Vectorizing training data", leave=True)
 
-        # Fit the encoder if needed and transform the data
-        if self._should_fit_encoder:
-            X_vectors = self._encoder.fit_transform(X_iter)
-        else: 
-            X_vectors = self._encoder.transform(X_iter)
+        # Transform the data
+        X_vectors = self._encoder.transform(X_iter)
         
         # Train the classifier
         self._classifier.fit(X_vectors, y_train)
@@ -51,6 +45,7 @@ class RandomForestModel(MLTextClassifier):
     def evaluate(self, X_test, y_test):
         """Evaluate model performance."""
 
+        # Transform the data
         X_vectors = self._encoder.transform(X_test)
 
         # Predict the class

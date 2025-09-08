@@ -14,22 +14,19 @@ app = FastAPI()
 # Create a router with the prefix
 api_router = APIRouter(prefix="/api/v1")
 
-# Define the model and encoder types
-class ModelType(str, Enum):
-    random_forest = "random_forest"
-    logistic_regression = "logistic_regression"
-    neural_network = "neural_network"
-
-class EncoderType(str, Enum):
-    tfidf = "tfidf"
-    glove = "glove"
-
 # Define the text item model
 class TextItem(BaseModel): 
     text: str
-    encoder: EncoderType = EncoderType.glove  # Default to GloVe
-    model: ModelType = ModelType.logistic_regression  # Default to Logistic Regression
-    
+    encoder: str = "glove"  # Default to GloVe
+    model: str = "logistic_regression"  # Default to Logistic Regression
+
+    @property
+    def model_info(self):
+        """Get model info or raise error if invalid."""
+        if self.model not in MODELS:
+            raise ValueError(f"Invalid model type. Available models: {list(MODELS.keys())}")
+        return MODELS[self.model]
+
 # Define some global variables
 API_NAME = "AI-Generated Text Detection API"
 API_DESCRIPTION = "Classifies text snippets as human or AI-generated."
@@ -42,38 +39,38 @@ ENDPOINTS = {
 }
 
 ENCODERS = {
-    EncoderType.tfidf: {
+    "tfidf": {
         "name": "TF-IDF",
         "class": TfidfEncoder,
         "should_fit": True,
-        "description": "Term Frequency-Inverse Document Frequency"
+        "description": "Term Frequency-Inverse Document Frequency."
     },
-    EncoderType.glove: {
+    "glove": {
         "name": "GloVe",
         "class": GloveEncoder,
         "should_fit": False,
-        "description": "Global Vectors for Word Representation"
+        "description": "Global Vectors for Word Representation."
     }
 }
 
 MODELS = {
-    ModelType.random_forest: {
+    "random_forest": {
         "name": "Random Forest",
-        "filename": "rf_model.pkl",
+        "prefix": "rf",
         "class": RandomForestModel,
-        "description": "Ensemble learning model with high accuracy"
+        "description": "Ensemble learning model with high accuracy."
     },
-    ModelType.logistic_regression: {
+    "logistic_regression": {
         "name": "Logistic Regression",
-        "filename": "lr_model.pkl",
+        "prefix": "lr",
         "class": LogisticRegressionModel,
-        "description": "Fast, interpretable linear model"
+        "description": "Fast, interpretable linear model."
     },
-    ModelType.neural_network: {
+    "neural_network": {
         "name": "Neural Network",
-        "filename": "nn_model.pkl",
+        "prefix": "nn",
         "class": NeuralNetworkModel,
-        "description": "Deep learning model with non-linear capabilities"
+        "description": "Deep learning model with non-linear capabilities."
     }
 }
 
@@ -81,11 +78,11 @@ MODELS = {
 MODEL_INFO = {
     "available_models": [
         {
-            "id": model_type.value,
+            "id": model_id,
             "name": info["name"],
             "description": info["description"]
         }
-        for model_type, info in MODELS.items()
+        for model_id, info in MODELS.items()
     ],
     "trained_on": "Kaggle Human vs. AI Generated Essays Dataset",
     "confidence_range": "0-100%"
@@ -128,33 +125,27 @@ async def classify(text_item: TextItem):
 
     try:
         # Get model and encoder info
-        model_info = MODELS[text_item.model]
+        model_info = text_item.model_info  # This will raise ValueError if model is invalid
         encoder_info = ENCODERS[text_item.encoder]
         
-        # Construct model filename with encoder type
-        model_filename = f"{text_item.model}_{text_item.encoder}_model.pkl"
-        
-        # Get absolute path to the model file
+        # Construct model filename
+        model_filename = f"{model_info['prefix']}_model_{text_item.encoder}.pkl"  # e.g. lr_model_glove.pkl
+
+        # Load the model with the encoder
         model_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "src", "models", "saved")
         model_path = os.path.join(model_folder, model_filename)
-
-        # Create encoder instance
-        encoder = encoder_info["class"]()
-        
-        # Create model instance with encoder
-        model = model_info["class"](encoder, encoder_info["should_fit"])
-        
-        # Load the model
-        loaded_model = model.load(model_folder, model_filename)
+        model_class = model_info["class"]
+        model = model_class.load(model_folder, model_filename)
 
         # Predict the class and probability
-        pred, prob = loaded_model.predict(text_item.text)
+        pred, prob = model.predict(text_item.text)
 
+        # Convert prediction to string
         prediction = "AI" if pred[0] == 1 else "Human"
         
         return {
             "model": model_info["name"],
-            "encoder": model_info["encoder"],
+            "encoder": text_item.encoder,
             "prediction": prediction,
             "confidence": {
                 "human": f"{prob[0][0] * 100:.2f}%",
@@ -162,10 +153,11 @@ async def classify(text_item: TextItem):
             }
         }
 
-    except KeyError:
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
         raise HTTPException(
-            status_code=400,
-            detail=f"Model {model_name} with {encoder_name} encoder not found. Please try again."
+            status_code=500,
+            detail=f"An unexpected error occurred: {e}"
         )
 
 

@@ -15,10 +15,6 @@ class TextEncoder(ABC):
         """Transform the texts."""
         pass
 
-    def fit_transform(self, texts, y=None):
-        """Fit the encoder and transform the texts."""
-        self.fit(texts, y)
-        return self.transform(texts)
 
     def save(self, folder: str, filename: str):
         """Save the encoder to a file."""

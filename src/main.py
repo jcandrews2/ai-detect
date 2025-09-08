@@ -10,197 +10,194 @@ from src.encoders.glove_encoder import GloveEncoder
 from src.encoders.text_encoder import TextEncoder
 import uvicorn
 from src.api.api import app
+import os
 
-
-def select_encoder_and_model(
+def select_encoder(
     encoder_type: Literal["tfidf", "glove"],
-    model_type: Literal["random_forest", "logistic_regression", "neural_network"]
-) -> tuple[TextEncoder, MLTextClassifier | NNTextClassifier]:
-    """Select the encoder and model."""
+) -> tuple[TextEncoder, bool]:
+    """Select the encoder."""
 
     encoder_classes = {
         "tfidf": [TfidfEncoder, True],
         "glove": [GloveEncoder, False]
     }
 
-    encoder_class, should_fit_encoder = encoder_classes[encoder_type]
-    encoder = encoder_class()
+    return encoder_classes[encoder_type]
 
+def select_model(
+    model_type: Literal["random_forest", "logistic_regression", "neural_network"]
+) -> MLTextClassifier | NNTextClassifier:
+    """Select the model."""
     model_classes = {
         "random_forest": RandomForestModel,
         "logistic_regression": LogisticRegressionModel,
         "neural_network": NeuralNetworkModel
     }
-    model_class = model_classes[model_type]
-    model = model_class(encoder, should_fit_encoder)
-
-    return encoder, model
+    return model_classes[model_type]
 
 
-def train_and_evaluate_ml_model(
-    model_type: Literal["random_forest", "logistic_regression"],
+def train_and_evaluate_model(
+    model_type: Literal["random_forest", "logistic_regression", "neural_network"],
     encoder_type: Literal["tfidf", "glove"],
     data_path: str,
-    save_path: str,
-    model_filename: str
-) -> MLTextClassifier:
-    """Train and evaluate an ML text detection model.
-    
+    model_save_path: str,
+    model_filename: str,
+    encoder_save_path: str,
+    encoder_filename: str
+) -> None:
+    """Train and evaluate a model for AI text detection
+
     Args:
-        model_type: Type of model to use ("random_forest" or "logistic_regression")
+        model_type: Type of model to use ("random_forest" or "logistic_regression" or "neural_network")
         encoder_type: Type of encoder to use ("tfidf" or "glove")
         data_path: Path to the data CSV file
-        save_path: Directory to save the trained model
+        model_save_path: Directory to save the trained model
         model_filename: Filename for the saved model
-    
+        encoder_save_path: Directory to save the trained encoder
+        encoder_filename: Filename for the saved encoder
+
     Returns:
-        The trained model instance
+        None
     """
 
+    print(f"\n=== {model_type} + {encoder_type} ===")
+
     # Load and prepare the data
-    print("===== Preparing data =====\n")
+    print("\n[ 1/4 ] Preparing data...")
     data_loader = DataLoader(data_path)
     data_loader.prepare()
     
     X_train, y_train = data_loader.get_train_data()
     X_test, y_test = data_loader.get_test_data()
 
-    # Select the encoder and model
-    encoder, model = select_encoder_and_model(encoder_type, model_type)
+    # Select the encoder
+    encoder_class, should_fit_encoder = select_encoder(encoder_type)
 
-    # Train and evaluate
-    model.train(X_train, y_train)
-    print()
-    print("===== Evaluating model =====\n")
+    # Load or train the encoder
+    print("\n[ 2/4 ] Loading encoder...")
+    encoder_path = os.path.join(encoder_save_path, encoder_filename)
+    if os.path.exists(encoder_path):
+        encoder = encoder_class.load(encoder_save_path, encoder_filename)
+    else:
+        # Initialize the encoder
+        encoder = encoder_class()
+
+        # Fit the encoder if needed
+        if should_fit_encoder:
+            encoder.fit(X_train)
+
+        # Save the encoder
+        encoder.save(encoder_save_path, encoder_filename)
+
+    # Select the model
+    model_class = select_model(model_type)
+
+    # Load or train the model
+    print("\n[ 3/4 ] Loading model...")
+    model_path = os.path.join(model_save_path, model_filename)
+    if os.path.exists(model_path):
+        model = model_class.load(model_save_path, model_filename)
+    else:
+        
+        # Initialize the model
+        model = model_class(encoder)
+
+        # Train the model
+        model.train_model(X_train, y_train)
+
+        # Save the model
+        model.save(model_save_path, model_filename)
+
+    print("\n[ 4/4 ] Evaluating model...")
     model.evaluate(X_test, y_test)
-    model.save(save_path, model_filename)
 
-    # Test loading and using the saved model
-    print("\n===== Testing saved model =====")
-    loaded_model = model.load(save_path, model_filename)
-    
-    # Verify it works with an example prediction
-    test_text = "The rise of artificial intelligence has brought both innovation and uncertainty to the field of written communication. As large language models become increasingly sophisticated, the distinction between human and machine writing grows more difficult to identify. Traditional machine learning methods, such as logistic regression or support vector machines, can still provide strong baselines for classification when paired with textual features like TF-IDF and n-grams. However, as AI output improves in fluency and variety, the boundaries blur, forcing researchers to rely on more subtle signals such as perplexity, stylistic variation, and contextual coherence. Detecting AI-generated text is not simply a technical challenge—it is also a societal one, raising questions about authorship, authenticity, and trust in digital information. Ultimately, the task demands both computational rigor and careful consideration of how these tools are applied in real-world settings."
-
-    pred, prob = loaded_model.predict(test_text)
-    print(f"\nTest prediction (1=AI, 0=Human): {pred[0]}")
-    print(f"Confidence: {prob[0].max():.2%}")
-
-    return loaded_model
-
-def train_and_evaluate_nn_model(
-    model_type: Literal["neural_network"],
-    encoder_type: Literal["tfidf", "glove"],
-    data_path: str,
-    save_path: str,
-    model_filename: str
-) -> NNTextClassifier:
-    """Train and evaluate an NN text detection model.
-    
-    Args:
-        model_type: Type of model to use ("neural_network")
-        encoder_type: Type of encoder to use ("tfidf" or "glove")
-        data_path: Path to the data CSV file
-        save_path: Directory to save the trained model
-        model_filename: Filename for the saved model
-    
-    Returns:
-        The trained model instance
-    """
-
-    # Load and prepare the data
-    print("===== Preparing data =====\n")
-    data_loader = DataLoader(data_path)
-    data_loader.prepare()
-    
-    X_train, y_train = data_loader.get_train_data()
-    X_test, y_test = data_loader.get_test_data()
-
-    # Select the encoder and model
-    encoder, model = select_encoder_and_model(encoder_type, model_type)
-
-    # Train and evaluate
-    model.train_model(X_train, y_train)
-    print()
-    print("===== Evaluating model =====\n")
-    model.evaluate(X_test, y_test)
-    model.save(save_path, model_filename)
-
-    # Test loading and using the saved model
-    print("\n===== Testing saved model =====")
-    loaded_model = model.load(save_path, model_filename)
-    
-    # Verify it works with an example prediction
-    test_text = "The rise of artificial intelligence has brought both innovation and uncertainty to the field of written communication. As large language models become increasingly sophisticated, the distinction between human and machine writing grows more difficult to identify. Traditional machine learning methods, such as logistic regression or support vector machines, can still provide strong baselines for classification when paired with textual features like TF-IDF and n-grams. However, as AI output improves in fluency and variety, the boundaries blur, forcing researchers to rely on more subtle signals such as perplexity, stylistic variation, and contextual coherence. Detecting AI-generated text is not simply a technical challenge—it is also a societal one, raising questions about authorship, authenticity, and trust in digital information. Ultimately, the task demands both computational rigor and careful consideration of how these tools are applied in real-world settings."
-
-    pred, prob = loaded_model.predict(test_text)
-    print(f"\nTest prediction (1=AI, 0=Human): {pred[0]}")
-    print(f"Confidence: {prob[0].max():.2%}")
-
-    return loaded_model
 
 def main():
     # dataset = "~/Downloads/AI_Human.csv"
     dataset = "~/Downloads/balanced_ai_human_prompts.csv"
 
+    """
+    Args:
+        model_type: Type of model to use ("neural_network")
+        encoder_type: Type of encoder to use ("tfidf" or "glove")
+        data_path: Path to the data CSV file
+        model_save_path: Directory to save the trained model
+        model_filename: Filename for the saved model
+        encoder_save_path: Directory to save the trained encoder
+        encoder_filename: Filename for the saved encoder
+
+    """
+
     # Random Forest model with GloVe encoder
-    rf_model = train_and_evaluate_ml_model(
+    train_and_evaluate_model(
         model_type="random_forest",
         encoder_type="glove",
         data_path=dataset,
-        save_path="src/models/saved",
-        model_filename="rf_model_glove.pkl"
+        model_save_path="src/models/saved",
+        model_filename="rf_model_glove.pkl",
+        encoder_save_path="src/encoders/saved",
+        encoder_filename="glove.pkl"
     )
 
     # Random Forest model with TF-IDF encoder
-    rf_model = train_and_evaluate_ml_model(
+    train_and_evaluate_model(
         model_type="random_forest",
-        encoder_type="glove",
+        encoder_type="tfidf",
         data_path=dataset,
-        save_path="src/models/saved",
-        model_filename="rf_model_tfidf.pkl"
+        model_save_path="src/models/saved",
+        model_filename="rf_model_tfidf.pkl",
+        encoder_save_path="src/encoders/saved",
+        encoder_filename="tfidf.pkl"
     )
 
     # Logistic Regression model with GloVe encoder
-    lr_model = train_and_evaluate_ml_model(
+    train_and_evaluate_model(
         model_type="logistic_regression",
         encoder_type="glove",
         data_path=dataset,
-        save_path="src/models/saved",
-        model_filename="lr_model_glove.pkl"
+        model_save_path="src/models/saved",
+        model_filename="lr_model_glove.pkl",
+        encoder_save_path="src/encoders/saved",
+        encoder_filename="glove.pkl"
     )
 
     # Logistic Regression model with TF-IDF encoder
-    lr_model = train_and_evaluate_ml_model(
+    train_and_evaluate_model(
         model_type="logistic_regression",
-        encoder_type="glove",
+        encoder_type="tfidf",
         data_path=dataset,
-        save_path="src/models/saved",
-        model_filename="lr_model_tfidf.pkl"
+        model_save_path="src/models/saved",
+        model_filename="lr_model_tfidf.pkl",
+        encoder_save_path="src/encoders/saved",
+        encoder_filename="tfidf.pkl"
     )
 
     # Neural Network model with GloVe encoder
-    nn_model = train_and_evaluate_nn_model(
+    train_and_evaluate_model(
         model_type="neural_network",
-        encoder_type="tfidf",
+        encoder_type="glove",
         data_path=dataset,
-        save_path="src/models/saved",
-        model_filename="nn_model_glove.pkl"
+        model_save_path="src/models/saved",
+        model_filename="nn_model_glove.pkl",
+        encoder_save_path="src/encoders/saved",
+        encoder_filename="glove.pkl"
     )
 
     # Neural Network model with TF-IDF encoder
-    nn_model = train_and_evaluate_nn_model(
+    train_and_evaluate_model(
         model_type="neural_network",
         encoder_type="tfidf",
         data_path=dataset,
-        save_path="src/models/saved",
-        model_filename="nn_model_tfidf.pkl"
+        model_save_path="src/models/saved",
+        model_filename="nn_model_tfidf.pkl",
+        encoder_save_path="src/encoders/saved",
+        encoder_filename="tfidf.pkl"
     )
 
 
 if __name__ == "__main__":
-    main()
-    # uvicorn.run("src.api.api:app", host="0.0.0.0", port=8000, reload=True)
+    # main()
+    uvicorn.run("src.api.api:app", host="0.0.0.0", port=8000, reload=True)
 
     # source venv/bin/activate
     # python -m src.main
