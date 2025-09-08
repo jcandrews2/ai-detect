@@ -35,7 +35,6 @@ API_VERSION = "1.0.0"
 ENDPOINTS = {
     "info": "/api/v1/info",
     "classify": "/api/v1/classify",
-    "health": "/api/v1/health"
 }
 
 ENCODERS = {
@@ -88,8 +87,30 @@ MODEL_INFO = {
     "confidence_range": "0-100%"
 }
 
-CAPABILITIES = {
-    "max_text_length": 5000,
+USAGE_EXAMPLES = {
+    "classify": {
+        "endpoint": "/api/v1/classify",
+        "method": "POST",
+        "request_format": {
+            "text": "string (required) - The text to classify",
+            "encoder": "string (optional) - Either 'glove' or 'tfidf', defaults to 'glove'",
+            "model": "string (optional) - One of 'logistic_regression', 'random_forest', or 'neural_network', defaults to 'logistic_regression'"
+        },
+        "example_request": {
+            "text": "This is a sample text that you want to classify",
+            "encoder": "glove",
+            "model": "logistic_regression"
+        },
+        "example_response": {
+            "model": "Logistic Regression",
+            "encoder": "glove",
+            "prediction": "Human",
+            "confidence": {
+                "human": "85.50%",
+                "ai": "14.50%"
+            }
+        }
+    }
 }
 
 MAINTAINER = {
@@ -108,14 +129,9 @@ async def info():
     return {
         "description": API_DESCRIPTION,
         "model": MODEL_INFO,
-        "capabilities": CAPABILITIES,
+        "usage": USAGE_EXAMPLES,
         "maintainer": MAINTAINER
     }
-
-# Define the health endpoint
-@api_router.get("/health")
-async def health():
-    return {}
 
 # Define the classify endpoint
 @api_router.post("/classify")
