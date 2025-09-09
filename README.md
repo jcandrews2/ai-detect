@@ -2,6 +2,8 @@
 
 An AI/ML API that predicts whether text is human-written or AI-generated. The API offers multiple classification models (Logistic Regression, Random Forest, Neural Networks) paired with different text encoding methods (GloVe word embeddings or TF-IDF vectorization). All of the models are trained on a Kaggle dataset of human and AI-generated essays.
 
+🌐 **Live API**: [http://ec2-3-131-93-133.us-east-2.compute.amazonaws.com/api/v1/](http://ec2-3-131-93-133.us-east-2.compute.amazonaws.com/api/v1/)
+
 ## ✨ Features
 
 - **Classification Models**:
