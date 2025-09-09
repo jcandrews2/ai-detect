@@ -63,7 +63,7 @@ POST /api/v1/classify
 "confidence": {
     "human": "85.50%",
     "ai": "14.50%"
-}
+  }
 }
 ```
 
