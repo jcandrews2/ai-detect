@@ -2,33 +2,41 @@
 
 An AI/ML API that predicts whether text is human-written or AI-generated. The API offers multiple classification models (Logistic Regression, Random Forest, Neural Networks) paired with different text encoding methods (GloVe word embeddings or TF-IDF vectorization). All of the models are trained on a Kaggle dataset of human and AI-generated essays.
 
-## Features
+## ✨ Features
 
 - **Classification Models**:
-  - Logistic Regression
-  - Random Forest
-  - Neural Networks
+- Logistic Regression
+- Random Forest
+- Neural Networks
 
 - **Text Encoding**:
-  - GloVe (Global Vectors for Word Representation)
-  - TF-IDF (Term Frequency-Inverse Document Frequency)
-
-- **Production-Ready API**:
-  - FastAPI-powered REST endpoints
-  - Swagger/OpenAPI documentation
-  - Efficient model loading and inference
-  - Detailed confidence scores
+- GloVe (Global Vectors for Word Representation)
+- TF-IDF (Term Frequency-Inverse Document Frequency)
 
 ## 🛠️ Technology Stack
 
-- **Backend Framework**: FastAPI
-- **ML/DL Frameworks**: 
+- **Programming Language**:
+  - Python
+
+- **Web Framework**:
+  - FastAPI (REST API)
+
+- **Machine Learning**:
   - PyTorch (Neural Networks)
-  - scikit-learn (ML)
+  - scikit-learn (Traditional ML)
+
+- **Data Processing**:
+  - Pandas (Data manipulation)
+
+- **Deployment**:
+  - AWS EC2 (Cloud hosting)
+
+- **Testing & Documentation**:
+  - Postman (API testing)
 
 ## 📋 API Documentation
 
-### Endpoints
+### 🔌 Endpoints
 
 #### 1. Classification Endpoint
 ```http
@@ -38,22 +46,22 @@ POST /api/v1/classify
 **Request Body**:
 ```json
 {
-    "text": "Text to classify",
-    "encoder": "glove",  // Options: "glove", "tfidf"
-    "model": "logistic_regression"  // Options: "logistic_regression", "random_forest", "neural_network"
+"text": "Text to classify",
+"encoder": "glove",  // Options: "glove", "tfidf"
+"model": "logistic_regression"  // Options: "logistic_regression", "random_forest", "neural_network"
 }
 ```
 
 **Response**:
 ```json
 {
-    "model": "Logistic Regression",
-    "encoder": "glove",
-    "prediction": "Human",
-    "confidence": {
-        "human": "85.50%",
-        "ai": "14.50%"
-    }
+"model": "Logistic Regression",
+"encoder": "glove",
+"prediction": "Human",
+"confidence": {
+    "human": "85.50%",
+    "ai": "14.50%"
+}
 }
 ```
 
@@ -63,13 +71,13 @@ GET /api/v1/info
 ```
 Returns API capabilities, model information, and usage examples.
 
-## Getting Started
+## ⚡ Getting Started
 
-### Prerequisites
+### 📋 Prerequisites
 - Python 3.12+
 - Pip package manager
 
-### Installation
+### 💻 Installation
 
 1. Clone the repository
 ```bash
@@ -89,31 +97,29 @@ pip install -r requirements.txt
 ```
 
 4. Download and prepare the dataset
-   - Visit [Kaggle AI Vs Human Text Dataset](https://www.kaggle.com/datasets/shanegerami/ai-vs-human-text)
-   - Download and place the CSV file in `src/data/`
+- Visit [Kaggle AI Vs Human Text Dataset](https://www.kaggle.com/datasets/shanegerami/ai-vs-human-text)
+- Download and place the CSV file in `src/data/`
 
 5. Train the models
-   - Open `src/main.py`
-   - Uncomment the `main()` function call at the bottom of the file
-   - Run the training script:
-   ```bash
-   python -m src.main
-   ```
-   - This will train all models and save them in `src/models/saved/`
+- Open `src/main.py`
+- Uncomment the `main()` function call at the bottom of the file
+- Run the training script:
+```bash
+python -m src.main
+```
+- This will train all models and save them in `src/models/saved/`
 
 6. Start the API server
-   - Open `src/api/api.py`
-   - Uncomment the uvicorn line at the bottom of the file
-   - Run the server:
-   ```bash
-   python -m src.main
-   ```
-   
-The API will be available at `http://localhost:8000`
-
+- Open `src/api/api.py`
+- Uncomment the uvicorn line at the bottom of the file
+- Run the server:
+```bash
+python -m src.main
 ```
 
-## 🧪 Model Performance
+The API will be available at `http://localhost:8000`
+
+## 📊 Model Performance
 
 The models were trained on a diverse dataset of human-written and AI-generated text samples. Performance metrics:
 
@@ -121,7 +127,7 @@ The models were trained on a diverse dataset of human-written and AI-generated t
 - Random Forest: High precision, ~88% accuracy
 - Neural Network: Best overall performance, ~90% accuracy
 
-## 🔧 Project Structure
+## 📁 Project Structure
 
 ```
 ai-detect/
@@ -134,15 +140,15 @@ ai-detect/
 └── requirements.txt   # Project dependencies
 ```
 
-## 📝 License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Author
+## 👤 Author
 
 Jimmy Andrews
 - Email: jcandrews2@icloud.com
 
-## Acknowledgments
+## 📚 Acknowledgments
 
 - Trained using the Kaggle dataset [AI Vs Human Text](https://www.kaggle.com/datasets/shanegerami/ai-vs-human-text)
