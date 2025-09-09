@@ -9,7 +9,7 @@ An AI/ML API that predicts whether text is human-written or AI-generated. The AP
 - **Classification Models**:
 - Logistic Regression
 - Random Forest
-- Neural Networks
+- Neural Network
 
 - **Text Encoding**:
 - GloVe (Global Vectors for Word Representation)
