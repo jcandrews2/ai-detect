@@ -71,7 +71,7 @@ POST /api/v1/classify
 ```http
 GET /api/v1/info
 ```
-Returns API capabilities, model information, and usage examples.
+Returns model information and usage examples.
 
 ## ⚡ Getting Started
 
@@ -100,7 +100,7 @@ pip install -r requirements.txt
 
 4. Download and prepare the dataset
 - Visit [Kaggle AI Vs Human Text Dataset](https://www.kaggle.com/datasets/shanegerami/ai-vs-human-text)
-- Download and place the CSV file in `src/data/`
+- Download and place the CSV file in `~/Downloads`
 
 5. Train the models
 - Open `src/main.py`
@@ -120,14 +120,6 @@ python -m src.main
 ```
 
 The API will be available at `http://localhost:8000`
-
-## 📊 Model Performance
-
-The models were trained on a diverse dataset of human-written and AI-generated text samples. Performance metrics:
-
-- Logistic Regression: Fast inference, ~85% accuracy
-- Random Forest: High precision, ~88% accuracy
-- Neural Network: Best overall performance, ~90% accuracy
 
 ## 📁 Project Structure
 
